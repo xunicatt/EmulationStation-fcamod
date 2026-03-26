@@ -1,4 +1,7 @@
 #include <string>
+#include <ifaddrs.h>
+#include <arpa/inet.h>
+#include <netinet/in.h>
 #include "components/ControllerActivityComponent.h"
 
 #include "resources/TextureResource.h"
@@ -47,9 +50,9 @@ void ControllerActivityComponent::init()
 	mPosition = Vector3f(margin, Renderer::getScreenHeight() - mSize.y() - margin, 0.0f);
 
 	/*for (int i = 0; i < MAX_PLAYERS; i++)
-		mPads[i].reset();
+		mPads[i].reset();*/
 
-	updateNetworkInfo();*/
+	updateNetworkInfo();
 	updateBatteryInfo();
 }
 
@@ -124,7 +127,7 @@ void ControllerActivityComponent::update(int deltaTime)
 		mNetworkCheckTime += deltaTime;
 		if (mNetworkCheckTime >= UPDATE_NETWORK_DELAY)
 		{
-			//updateNetworkInfo();
+			updateNetworkInfo();
 			mNetworkCheckTime = 0;
 		}
 	}
@@ -391,10 +394,42 @@ void ControllerActivityComponent::applyTheme(const std::shared_ptr<ThemeData>& t
     mBatteryInfo.level = -1;
 }
 
-/*void ControllerActivityComponent::updateNetworkInfo()
+bool ControllerActivityComponent::hasIpAddress()
 {
-	mNetworkConnected = Settings::getInstance()->getBool("ShowNetworkIndicator") && !queryIPAddress().empty();
-}*/
+    struct ifaddrs* ifaddr;
+    struct ifaddrs* ifa;
+
+    if (getifaddrs(&ifaddr) == -1)
+        return false;
+
+    bool connected = false;
+
+    for (ifa = ifaddr; ifa != NULL; ifa = ifa->ifa_next)
+    {
+        if (!ifa->ifa_addr)
+            continue;
+
+        // skip loopback
+        if (strcmp(ifa->ifa_name, "lo") == 0)
+            continue;
+
+        if (ifa->ifa_addr->sa_family == AF_INET)
+        {
+            connected = true;
+            break;
+        }
+    }
+
+    freeifaddrs(ifaddr);
+
+    return connected;
+}
+
+void ControllerActivityComponent::updateNetworkInfo()
+{
+	// mNetworkConnected = Settings::getInstance()->getBool("ShowNetworkIndicator") && hasIpAddress();
+	mNetworkConnected = hasIpAddress();
+}
 
 void ControllerActivityComponent::updateBatteryInfo()
 {

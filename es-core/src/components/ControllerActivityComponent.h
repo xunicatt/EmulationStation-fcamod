@@ -95,6 +95,7 @@ protected:
 protected:
 	// Network info
 	void updateNetworkInfo();
+    bool hasIpAddress();
 	std::shared_ptr<TextureResource> mNetworkImage;
 	bool mNetworkConnected;
 	int mNetworkCheckTime;
